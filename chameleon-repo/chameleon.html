@@ -550,6 +550,7 @@
   };
   const OUTPUT_FORMATS = ['png','jpeg','webp','bmp'];
   const HEIC2ANY_SRC = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+  const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
   /* ---------------- byte sniffing ---------------- */
 
@@ -583,7 +584,8 @@
       return { format:'tiff', label:'TIFF', decodable:false, note:'TIFF isn\u2019t supported yet.' };
     if (b.length >= 4 && eq(0,[0x25,0x50,0x44,0x46]))
       return { format:'pdf', label:'PDF', decodable:false, note:'That\u2019s a PDF, not an image file.' };
-    if (b.length >= 4 && (b[0]===0x3C && (b[1]===0x3F || b[1]===0x73 || b[1]===0x73)))
+    if ((b.length >= 7 && b[0]===0xEF && b[1]===0xBB && b[2]===0xBF && b[3]===0x3C) ||
+        (b.length >= 4 && b[0]===0x3C && (b[1]===0x3F || b[1]===0x73 || b[1]===0x53)))
       return { format:'svg', label:'SVG', decodable:false, note:'Vector format — not supported yet.' };
 
     return { format:'unknown', label:'Unrecognized', decodable:false, note:'This doesn\u2019t match a known image format — it may not actually be an image.' };
@@ -690,6 +692,15 @@
     return new Blob([buffer], { type:'image/bmp' });
   }
 
+  function fillThumb(item){
+    if (!item.imgEl || !item.thumbEl) return;
+    item.thumbEl.innerHTML = '';
+    const imgTag = document.createElement('img');
+    imgTag.src = item.objectUrl;
+    imgTag.alt = item.name;
+    item.thumbEl.appendChild(imgTag);
+  }
+
   function encodeCanvas(canvas, format, quality){
     if (format === 'bmp') return Promise.resolve(encodeBMP(canvas));
     const mime = FORMAT_META[format].mime;
@@ -704,6 +715,30 @@
 
   async function addFile(file){
     els.convertSummary.hidden = true;
+    if (file.size > MAX_FILE_SIZE){
+      const id = state.nextId++;
+      const item = {
+        id, file,
+        name: file.name,
+        size: file.size,
+        sniff: { format:'oversized', label:'Too large', decodable:false,
+          note:`File is ${humanSize(file.size)} — the limit is ${humanSize(MAX_FILE_SIZE)}.` },
+        hex: '',
+        width: null, height: null,
+        objectUrl: null,
+        targetFormat: els.bulkFormat.value,
+        formatOverridden: false,
+        convertedBlob: null,
+        convertedUrl: null,
+        convertedName: null,
+        status: 'idle',
+        pending: false,
+      };
+      state.items.push(item);
+      renderCard(item);
+      updateHeaderCount();
+      return;
+    }
     const id = state.nextId++;
     const headerBuf = await file.slice(0, 32).arrayBuffer();
     const headerBytes = new Uint8Array(headerBuf);
@@ -742,6 +777,7 @@
         item.sniff = { format:'heic', label:'HEIC/HEIF', decodable:true };
         item.pending = false;
         rerenderCard(item);
+        fillThumb(item);
       }catch(e){
         item.sniff = { format:'heic', label:'HEIC/HEIF', decodable:false,
           note:'Couldn\u2019t convert this HEIC file — it may be corrupted, or an unusual variant.' };
@@ -762,6 +798,7 @@
         item.height = img.naturalHeight;
         item.imgEl = img;
         updateCardMeta(item);
+        fillThumb(item);
       }catch(e){
         item.sniff = { ...item.sniff, decodable:false, note:'Couldn\u2019t decode this file — it may be corrupted.' };
         rerenderCard(item);
@@ -1023,20 +1060,6 @@
     }
     updateCardMeta(item);
   }
-
-  /* watch for image element becoming available, to fill thumbnail */
-  const thumbObserverInterval = setInterval(() => {
-    state.items.forEach(item => {
-      if (item.imgEl && item.thumbEl && !item.thumbEl.dataset.filled){
-        item.thumbEl.innerHTML = '';
-        const imgTag = document.createElement('img');
-        imgTag.src = item.objectUrl;
-        imgTag.alt = item.name;
-        item.thumbEl.appendChild(imgTag);
-        item.thumbEl.dataset.filled = '1';
-      }
-    });
-  }, 200);
 
   /* ---------------- events ---------------- */
 
