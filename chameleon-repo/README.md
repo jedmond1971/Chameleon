@@ -20,6 +20,19 @@ python3 -m http.server 8000
 
 Then open `http://localhost:8000/chameleon.html` — or, from another device on the same network, `http://<your-machine's-LAN-IP>:8000/chameleon.html`.
 
+### Docker
+
+```
+docker run --rm -p 8080:8080 ghcr.io/jedmond1971/chameleon:latest
+```
+
+Then open `http://localhost:8080/chameleon.html`. The image runs nginx as a non-root user and serves the same static file described below — no backend, nothing persisted. To build it yourself instead of pulling:
+
+```
+docker build -t chameleon ./chameleon-repo
+docker run --rm -p 8080:8080 chameleon
+```
+
 ## How it works
 
 - **Format detection**: reads the first bytes of the file (the same technique the Unix `file` command uses) rather than trusting the filename extension.
@@ -35,4 +48,4 @@ Then open `http://localhost:8000/chameleon.html` — or, from another device on 
 
 ## License
 
-Not yet decided — this repo is private for now, so it hasn't been a pressing question. Worth revisiting before this ever goes public.
+[MIT](LICENSE)

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
   :root{
     --bg:#fffdf9;
@@ -551,6 +551,7 @@
   };
   const OUTPUT_FORMATS = ['png','jpeg','webp','bmp'];
   const HEIC2ANY_SRC = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+  const HEIC2ANY_INTEGRITY = 'sha384-OTofQ0MEeiSgh62havBcemCIK0gqj809wX6UA0uPISNMRnR6NZyCdGzX3SbLrgwL';
   const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
   /* ---------------- byte sniffing ---------------- */
@@ -625,6 +626,9 @@
     heic2anyLoadPromise = new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = HEIC2ANY_SRC;
+      script.integrity = HEIC2ANY_INTEGRITY;
+      script.crossOrigin = 'anonymous';
+      script.referrerPolicy = 'no-referrer';
       script.onload = () => resolve();
       script.onerror = () => { heic2anyLoadPromise = null; reject(new Error('heic2any-load-failed')); };
       document.head.appendChild(script);

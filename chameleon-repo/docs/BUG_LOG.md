@@ -1,6 +1,6 @@
 # Magic Bytes — Bug Log
 
-**Status:** All items below are logged only — no fixes applied yet, per request.
+**Status:** All three items below have since been fixed in `chameleon.html`; entries kept as-is for the record, with a Fixed note added to each. See [Retrospective note](#retrospective-note) for the lesson carried forward.
 **Related doc:** image-converter-prd.md
 **Date logged:** 2026-07-08
 **Found by:** Jamie, manual testing of v1
@@ -9,11 +9,11 @@
 
 ## Summary
 
-| ID | Title | Severity | Type | PRD gap? |
-|---|---|---|---|---|
-| BUG-001 | No feedback when Convert All skips unsupported files | Medium | Missing behavior | Yes — batch/mixed-content behavior undefined |
-| BUG-002 | Clear All / individual remove doesn't remove card from screen | High | Code defect | No — implementation bug |
-| BUG-003 | Convert All uses each file's target format from add-time, not the live bulk dropdown | High | Logic/UX mismatch | Yes — timing/binding of bulk control undefined |
+| ID | Title | Severity | Type | PRD gap? | Status |
+|---|---|---|---|---|---|
+| BUG-001 | No feedback when Convert All skips unsupported files | Medium | Missing behavior | Yes — batch/mixed-content behavior undefined | Fixed |
+| BUG-002 | Clear All / individual remove doesn't remove card from screen | High | Code defect | No — implementation bug | Fixed |
+| BUG-003 | Convert All uses each file's target format from add-time, not the live bulk dropdown | High | Logic/UX mismatch | Yes — timing/binding of bulk control undefined | Fixed |
 
 ---
 
@@ -32,6 +32,8 @@
 
 **Proposed fix direction (not implemented):** Show a run summary after Convert All completes (e.g. "2 converted, 3 skipped — unsupported format"), and update each skipped card's own status area at the moment of the attempt, not just its static add-time note.
 
+**Fixed:** `convertAll()` now sets each skipped card's status to "Skipped — unsupported format" and shows a run summary via `showConvertSummary()` covering converted/failed/skipped/pending counts.
+
 ---
 
 ## BUG-002 — Clear All / individual remove doesn't remove the card from screen
@@ -48,6 +50,8 @@
 **What the PRD didn't specify:** Nothing — this is a straightforward implementation defect (a property-name mismatch introduced during the build), not a requirements gap. Logged for the record, not as a spec issue.
 
 **Proposed fix direction (not implemented):** Fix `removeItem` to reference `item.cardEl`, or standardize on a single property name for the card element throughout the file.
+
+**Fixed:** `removeItem` now references `item.cardEl` (`if (item.cardEl) item.cardEl.remove();`), and `cardEl` is the single property name used throughout.
 
 ---
 
@@ -66,6 +70,8 @@
 **What the PRD didn't specify:** §7.3 states files should "convert to the same user-selected target format," but never defines the *timing or binding* of that selection — whether it's captured once per file, read live at conversion time, or how a later bulk change should reconcile with a per-card override made in between. This is a real interaction-contract gap, not just an oversight in code.
 
 **Proposed fix direction (not implemented):** Convert All should read the bulk dropdown's current value live and apply it to every card that hasn't been manually overridden; per-card selections should be treated as explicit one-off overrides that persist until changed again.
+
+**Fixed:** the bulk dropdown's `change` listener now pushes its value onto every item where `!item.formatOverridden`, and a per-card override sets that flag so it's excluded from future bulk pushes — matching the proposed fix direction exactly.
 
 ---
 
